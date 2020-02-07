@@ -960,7 +960,7 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
         else { /* end of function, treat as WASM_OP_RETURN */
           frame_sp -= cur_func->ret_cell_num;
           for (i = 0; i < cur_func->ret_cell_num; i++) {
-            if ((i == cur_func->ret_cell_num - 1) && (_R1 & 0x01)){
+            if ((i == (uint32)(cur_func->ret_cell_num - 1)) && (_R1 & 0x01)){
               *prev_frame->sp++ = (_R1 &= 0x00, (int32)_R0);
             }
             else
@@ -1013,7 +1013,7 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
       HANDLE_OP (WASM_OP_RETURN):
         frame_sp -= cur_func->ret_cell_num;
         for (i = 0; i < cur_func->ret_cell_num; i++) {
-          if ((i == cur_func->ret_cell_num - 1) && (_R1 & 0x01)){
+          if ((i == (uint32)(cur_func->ret_cell_num - 1)) && (_R1 & 0x01)){
             *prev_frame->sp++ = (_R1 &= 0x00, (int32)_R0);
           }
           else
