@@ -405,7 +405,11 @@ read_leb(const uint8 *buf, uint32 *p_offset, uint32 maxbits, bool sign)
 }
 
 #define PUSH_I32(value) do {                    \
-    *(int32*)frame_sp++ = (int32)(value);       \
+    if (_R1 & 0x01)                             \
+      *(int32*)frame_sp++ = (int32)(_R0);       \
+    else                                        \
+      _R1 |= 0x01;                              \
+    _R0 = value;                                \
   } while (0)
 
 #define PUSH_F32(value) do {                    \
@@ -432,7 +436,7 @@ read_leb(const uint8 *buf, uint32 *p_offset, uint32 maxbits, bool sign)
     frame_csp++;                                        \
   } while (0)
 
-#define POP_I32() (--frame_sp, *(int32*)frame_sp)
+#define POP_I32() ((_R1 & 0x01) ? (_R1 &= 0x00, (int32)_R0) : (--frame_sp, *(int32*)frame_sp))
 
 #define POP_F32() (--frame_sp, *(float32*)frame_sp)
 
@@ -611,10 +615,17 @@ read_leb(const uint8 *buf, uint32 *p_offset, uint32 maxbits, bool sign)
     PUSH_##src_op_type(val2);                                       \
   } while (0)
 
-#define DEF_OP_NUMERIC(src_type1, src_type2, src_op_type, operation) do {   \
-    frame_sp -= sizeof(src_type2)/sizeof(uint32);                           \
-    *(src_type1*)(frame_sp - sizeof(src_type1)/sizeof(uint32)) operation##= \
-    *(src_type2*)(frame_sp);                                                \
+// Currently Only work for i32
+#define DEF_OP_NUMERIC(src_type1, src_type2, src_op_type, operation) do {         \
+    frame_sp -= sizeof(src_type2)/sizeof(uint32);                                 \
+    if (_R1 & 0x01) {                                                             \
+      _R0 = *(src_type1*)(frame_sp) operation _R0;                                \
+    }                                                                             \
+    else {                                                                        \
+      _R0 = *(src_type1*)(frame_sp - sizeof(src_type1)/sizeof(uint32)) operation  \
+      *(src_type2*)(frame_sp);                                                    \
+    }                                                                             \
+    _R1 |= 0x01;                                                                  \
   } while (0)
 
 #if WASM_CPU_SUPPORTS_UNALIGNED_64BIT_ACCESS != 0
@@ -849,6 +860,7 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
   uint64 all_cell_num = 0;
   int32 didx, val;
   uint8 *else_addr, *end_addr, *maddr = NULL;
+  register uint32 _R0 = 0, _R1 = 0;
 
 #if WASM_ENABLE_LABELS_AS_VALUES != 0
   #define HANDLE_OPCODE(op) &&HANDLE_##op
@@ -948,7 +960,11 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
         else { /* end of function, treat as WASM_OP_RETURN */
           frame_sp -= cur_func->ret_cell_num;
           for (i = 0; i < cur_func->ret_cell_num; i++) {
-            *prev_frame->sp++ = frame_sp[i];
+            if ((i == cur_func->ret_cell_num - 1) && (_R1 & 0x01)){
+              *prev_frame->sp++ = (_R1 &= 0x00, (int32)_R0);
+            }
+            else
+              *prev_frame->sp++ = frame_sp[i];
           }
           goto return_func;
         }
@@ -997,7 +1013,11 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
       HANDLE_OP (WASM_OP_RETURN):
         frame_sp -= cur_func->ret_cell_num;
         for (i = 0; i < cur_func->ret_cell_num; i++) {
-          *prev_frame->sp++ = frame_sp[i];
+          if ((i == cur_func->ret_cell_num - 1) && (_R1 & 0x01)){
+            *prev_frame->sp++ = (_R1 &= 0x00, (int32)_R0);
+          }
+          else
+            *prev_frame->sp++ = frame_sp[i];
         }
         goto return_func;
 
@@ -1055,13 +1075,21 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
 
       HANDLE_OP (WASM_OP_DROP_32):
         {
-          frame_sp--;
+          if (_R1 & 0x01)
+            _R1 &= 0;
+          else
+            frame_sp--;
           HANDLE_OP_END ();
         }
 
       HANDLE_OP (WASM_OP_DROP_64):
         {
-          frame_sp -= 2;
+          if (_R1 & 0x01) {
+            _R1 &= 0;
+            frame_sp--;
+          }
+          else
+            frame_sp -= 2;
           HANDLE_OP_END ();
         }
 
@@ -1333,10 +1361,18 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
           GET_OPCODE();
           read_leb_uint32(frame_ip, frame_ip_end, flags);
           read_leb_uint32(frame_ip, frame_ip_end, offset);
-          frame_sp--;
+          if (_R1 & 0x01)
+            _R1 &= 0;
+          else
+            frame_sp--;
           addr = (uint32)POP_I32();
           CHECK_MEMORY_OVERFLOW();
-          STORE_U32(maddr, frame_sp[1]);
+          if (_R1 & 0x01) {
+            STORE_U32(maddr, _R0);
+            _R1 &= 0;
+          }
+          else
+            STORE_U32(maddr, frame_sp[1]);
           (void)flags;
           HANDLE_OP_END ();
         }
