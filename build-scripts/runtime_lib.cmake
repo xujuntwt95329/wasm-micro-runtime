@@ -106,6 +106,7 @@ set (source_all
     ${WASM_APP_LIB_SOURCE_ALL}
     ${NATIVE_INTERFACE_SOURCE}
     ${APP_MGR_SOURCE}
+    ${MIR_SOURCE}
 )
 
 set (WAMR_RUNTIME_LIB_SOURCE ${source_all})

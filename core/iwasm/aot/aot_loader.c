@@ -13,6 +13,11 @@
 #if WASM_ENABLE_JIT != 0
 #include "../compilation/aot_llvm.h"
 #include "../interpreter/wasm_loader.h"
+#if WASM_ENABLE_LW_JIT != 0
+#include "mir.h"
+#include "llvm2mir/llvm2mir.h"
+#include "mir-gen.h"
+#endif
 #endif
 
 
@@ -1861,6 +1866,142 @@ aot_load_from_aot_file(const uint8 *buf, uint32 size,
     return module;
 }
 
+#if WASM_ENABLE_LW_JIT != 0
+static int32 llvm_cttz_i32(int32 value, bool b)
+{
+    return __builtin_ctz(value);
+}
+
+static int64 llvm_cttz_i64(int64 value, bool b)
+{
+    return __builtin_ctzll(value);
+}
+
+static int32 llvm_ctlz_i32(int32 value, bool b)
+{
+    uint32 num = 0;
+    if (value == 0)
+        return 32;
+    while (!(value & 0x80000000)) {
+        num++;
+        value <<= 1;
+    }
+    return num;
+}
+
+static int64 llvm_ctlz_i64(int64 value, bool b)
+{
+    uint32 num = 0;
+    if (value == 0)
+        return 64;
+    while (!(value & 0x8000000000000000LL)) {
+        num++;
+        value <<= 1;
+    }
+    return num;
+}
+
+static int32 llvm_ctpop_i32(int32 value)
+{
+    return __builtin_popcount(value);
+}
+
+static int64 llvm_ctpop_i64(int64 value)
+{
+    return __builtin_popcountll(value);
+}
+
+static float32 llvm_copysign_f32(float32 a, float32 b)
+{
+    return __builtin_copysignf(a, b);
+}
+
+static float64 llvm_copysign_f64(float64 a, float64 b)
+{
+    return __builtin_copysign(a, b);
+}
+
+static float32 llvm_minnum_f32(float32 a, float32 b)
+{
+    return __builtin_fminf(a, b);
+}
+
+static float64 llvm_minnum_f64(float64 a, float64 b)
+{
+    return __builtin_fmin(a, b);
+}
+
+static float32 llvm_maxnum_f32(float32 a, float32 b)
+{
+    return __builtin_fmaxf(a, b);
+}
+
+static float64 llvm_maxnum_f64(float64 a, float64 b)
+{
+    return __builtin_fmax(a, b);
+}
+
+static float32 llvm_sqrt_f32(float32 value)
+{
+    return __builtin_sqrtf(value);
+}
+
+static float64 llvm_sqrt_f64(float64 value)
+{
+    return __builtin_sqrt(value);
+}
+
+static float32 llvm_fabs_f32(float32 value)
+{
+    return __builtin_fabsf(value);
+}
+
+static float64 llvm_fabs_f64(float64 value)
+{
+    return __builtin_fabs(value);
+}
+
+static float32 llvm_ceil_f32(float32 value)
+{
+    return __builtin_ceilf(value);
+}
+
+static float64 llvm_ceil_f64(float64 value)
+{
+    return __builtin_ceil(value);
+}
+
+static float32 llvm_floor_f32(float32 value)
+{
+    return __builtin_floorf(value);
+}
+
+static float64 llvm_floor_f64(float64 value)
+{
+    return __builtin_floor(value);
+}
+
+static float32 llvm_trunc_f32(float32 value)
+{
+    return __builtin_truncf(value);
+}
+
+static float64 llvm_trunc_f64(float64 value)
+{
+    return __builtin_trunc(value);
+}
+
+static float32 llvm_rint_f32(float32 value)
+{
+    return __builtin_rintf(value);
+}
+
+static float64 llvm_rint_f64(float64 value)
+{
+    return __builtin_rint(value);
+}
+#endif
+
 #if WASM_ENABLE_JIT != 0
 static AOTModule*
 aot_load_from_comp_data(AOTCompData *comp_data, AOTCompContext *comp_ctx,
@@ -1919,6 +2060,71 @@ aot_load_from_comp_data(AOTCompData *comp_data, AOTCompContext *comp_ctx,
         goto fail1;
     }
 
+#if WASM_ENABLE_LW_JIT != 0
+    MIR_context_t mir_ctx;
+    MIR_module_t mir_module;
+
+    mir_ctx = MIR_init ();
+    mir_module = llvm2mir (mir_ctx, comp_ctx->module);
+
+//    MIR_output(mir_ctx, stderr);
+
+    MIR_load_module (mir_ctx, mir_module);
+
+    MIR_load_external(mir_ctx, "llvm.cttz.i32", llvm_cttz_i32);
+    MIR_load_external(mir_ctx, "llvm.cttz.i64", llvm_cttz_i64);
+    MIR_load_external(mir_ctx, "llvm.ctlz.i32", llvm_ctlz_i32);
+    MIR_load_external(mir_ctx, "llvm.ctlz.i64", llvm_ctlz_i64);
+    MIR_load_external(mir_ctx, "llvm.ctpop.i32", llvm_ctpop_i32);
+    MIR_load_external(mir_ctx, "llvm.ctpop.i64", llvm_ctpop_i64);
+    MIR_load_external(mir_ctx, "llvm.copysign.f32", llvm_copysign_f32);
+    MIR_load_external(mir_ctx, "llvm.copysign.f64", llvm_copysign_f64);
+    MIR_load_external(mir_ctx, "llvm.minnum.f32", llvm_minnum_f32);
+    MIR_load_external(mir_ctx, "llvm.minnum.f64", llvm_minnum_f64);
+    MIR_load_external(mir_ctx, "llvm.maxnum.f32", llvm_maxnum_f32);
+    MIR_load_external(mir_ctx, "llvm.maxnum.f64", llvm_maxnum_f64);
+    MIR_load_external(mir_ctx, "llvm.sqrt.f32", llvm_sqrt_f32);
+    MIR_load_external(mir_ctx, "llvm.sqrt.f64", llvm_sqrt_f64);
+    MIR_load_external(mir_ctx, "llvm.fabs.f32", llvm_fabs_f32);
+    MIR_load_external(mir_ctx, "llvm.fabs.f64", llvm_fabs_f64);
+    MIR_load_external(mir_ctx, "llvm.ceil.f32", llvm_ceil_f32);
+    MIR_load_external(mir_ctx, "llvm.ceil.f64", llvm_ceil_f64);
+    MIR_load_external(mir_ctx, "llvm.floor.f32", llvm_floor_f32);
+    MIR_load_external(mir_ctx, "llvm.floor.f64", llvm_floor_f64);
+    MIR_load_external(mir_ctx, "llvm.trunc.f32", llvm_trunc_f32);
+    MIR_load_external(mir_ctx, "llvm.trunc.f64", llvm_trunc_f64);
+    MIR_load_external(mir_ctx, "llvm.rint.f32", llvm_rint_f32);
+    MIR_load_external(mir_ctx, "llvm.rint.f64", llvm_rint_f64);
+
+    bh_print_time("Begin to generate machine code");
+
+    MIR_gen_init(mir_ctx);
+    // MIR_gen_set_debug_file(mir_ctx, stderr);
+    MIR_link (mir_ctx, MIR_set_gen_interface, NULL);
+
+    for (i = 0; i < comp_data->func_count; i++) {
+        MIR_item_t func_item = NULL;
+        snprintf(func_name, sizeof(func_name), "%s%d", AOT_FUNC_PREFIX, i);
+        for (MIR_item_t f = DLIST_HEAD (MIR_item_t, mir_module->items); f != NULL; f = DLIST_NEXT (MIR_item_t, f))
+            if (f->item_type == MIR_func_item && strcmp (f->u.func->name, func_name) == 0) {
+                func_item = f;
+                break;
+            }
+        if (!func_item) {
+            set_error_buf(error_buf, error_buf_size,
+                          "find function item fail.");
+            goto fail2;
+        }
+
+        if (!(module->func_ptrs[i] =
+                    (void *)MIR_gen(mir_ctx, func_item))) {
+            set_error_buf(error_buf, error_buf_size,
+                          "Get function address fail.");
+            goto fail2;
+        }
+    }
+#else
+    bh_print_time("Begin to generate llvm machine code");
     /* Resolve function addresses */
     bh_assert(comp_ctx->exec_engine);
     memset(module->func_ptrs, 0, (uint32)size);
@@ -1932,6 +2138,9 @@ aot_load_from_comp_data(AOTCompData *comp_data, AOTCompContext *comp_ctx,
             goto fail2;
         }
     }
+#endif
+
+    bh_print_time("Finish generate machine code");
 
     /* Allocation memory for function type indexes */
     size = (uint64)module->func_count * sizeof(uint32);

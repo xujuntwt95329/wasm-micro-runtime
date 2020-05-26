@@ -777,14 +777,15 @@ aot_emit_llvm_file(AOTCompContext *comp_ctx, const char *file_name)
 
     bh_print_time("Begin to emit LLVM IR file");
 
-    if (LLVMPrintModuleToFile(comp_ctx->module, file_name, &err) != 0) {
-        if (err) {
-            LLVMDisposeMessage(err);
-            err = NULL;
-        }
-        aot_set_last_error("emit llvm ir to file failed.");
-        return false;
-    }
+    LLVMWriteBitcodeToFile(comp_ctx->module, file_name);
+    // if (LLVMPrintModuleToFile(comp_ctx->module, file_name, &err) != 0) {
+    //     if (err) {
+    //         LLVMDisposeMessage(err);
+    //         err = NULL;
+    //     }
+    //     aot_set_last_error("emit llvm ir to file failed.");
+    //     return false;
+    // }
 
     return true;
 }
