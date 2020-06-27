@@ -1301,7 +1301,12 @@ __wasi_errno_t wasmtime_ssp_fd_advise(
   if (error != 0)
     return error;
 
+#ifdef ANDROID
+  /* Currently Android doesn't support posix_fadvise */
+  int ret = 0;
+#else
   int ret = posix_fadvise(fd_number(fo), (off_t)offset, (off_t)len, nadvice);
+#endif
   fd_object_release(fo);
   if (ret != 0)
     return convert_errno(ret);
@@ -1391,7 +1396,12 @@ static char *readlinkat_dup(
     }
 
     buf = newbuf;
+#ifdef ANDROID
+    /* Android doesn't support readlinkat */
+    ssize_t ret = 0;
+#else
     ssize_t ret = readlinkat(fd, path, buf, len);
+#endif
     if (ret < 0) {
       wasm_runtime_free(buf);
       return NULL;
@@ -1758,8 +1768,13 @@ __wasi_errno_t wasmtime_ssp_path_link(
   }
   rwlock_unlock(&prestats->lock);
 
+#ifdef ANDROID
+  /* Android doesn't support linkat */
+  int ret = 0;
+#else
   int ret = linkat(old_pa.fd, old_pa.path, new_pa.fd, new_pa.path,
                    old_pa.follow ? AT_SYMLINK_FOLLOW : 0);
+#endif
   if (ret < 0 && errno == ENOTSUP && !old_pa.follow) {
     // OS X doesn't allow creating hardlinks to symbolic links.
     // Duplicate the symbolic link instead.
@@ -1774,7 +1789,11 @@ __wasi_errno_t wasmtime_ssp_path_link(
           return __WASI_EBADF;
       }
       rwlock_unlock(&prestats->lock);
+#ifdef ANDROID
+      ret = 0;
+#else
       ret = symlinkat(target, new_pa.fd, new_pa.path);
+#endif
       wasm_runtime_free(target);
     }
   }
@@ -1980,7 +1999,12 @@ __wasi_errno_t wasmtime_ssp_fd_readdir(
     if (cookie == __WASI_DIRCOOKIE_START)
       rewinddir(dp);
     else
+#ifdef ANDROID
+      /* Android platform doesn't support seekdir */
+      ;
+#else
       seekdir(dp, (long)cookie);
+#endif
     fo->directory.offset = cookie;
   }
 
@@ -1994,7 +2018,11 @@ __wasi_errno_t wasmtime_ssp_fd_readdir(
       fd_object_release(fo);
       return errno == 0 || *bufused > 0 ? 0 : convert_errno(errno);
     }
+#ifdef ANDROID
+    /* Android platform doesn't support seekdir */
+#else
     fo->directory.offset = (__wasi_dircookie_t)telldir(dp);
+#endif
 
     // Craft a directory entry and copy that back.
     size_t namlen = strlen(de->d_name);
@@ -2060,8 +2088,12 @@ __wasi_errno_t wasmtime_ssp_path_readlink(
   // Linux requires that the buffer size is positive. whereas POSIX does
   // not. Use a fake buffer to store the results if the size is zero.
   char fakebuf[1];
+#ifdef ANDROID
+  ssize_t len = 0;
+#else
   ssize_t len = readlinkat(pa.fd, pa.path, bufsize == 0 ? fakebuf : buf,
                            bufsize == 0 ? sizeof(fakebuf) : bufsize);
+#endif
   path_put(&pa);
   if (len < 0)
     return convert_errno(errno);
@@ -2148,6 +2180,10 @@ __wasi_errno_t wasmtime_ssp_fd_filestat_get(
   return 0;
 }
 
+#ifdef ANDROID
+typedef long int __syscall_slong_t;
+#endif
+
 static void convert_timestamp(
     __wasi_timestamp_t in,
     struct timespec *out
@@ -2226,7 +2262,12 @@ __wasi_errno_t wasmtime_ssp_fd_filestat_set_times(
 
   struct timespec ts[2];
   convert_utimens_arguments(st_atim, st_mtim, fstflags, ts);
+#ifdef ANDROID
+  /* Android doesn't support futimens */
+  int ret = 0;
+#else
   int ret = futimens(fd_number(fo), ts);
+#endif
 
   fd_object_release(fo);
   if (ret < 0)
@@ -2345,7 +2386,11 @@ __wasi_errno_t wasmtime_ssp_path_symlink(
   }
   rwlock_unlock(&prestats->lock);
 
+#ifdef ANDROID
+  int ret = 0;
+#else
   int ret = symlinkat(target, pa.fd, pa.path);
+#endif
   path_put(&pa);
   wasm_runtime_free(target);
   if (ret < 0)

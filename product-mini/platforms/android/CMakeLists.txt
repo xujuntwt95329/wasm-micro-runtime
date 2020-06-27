@@ -20,7 +20,7 @@ set (WAMR_BUILD_TYPE          Release)
 set (WAMR_BUILD_INTERP        1)
 set (WAMR_BUILD_AOT           0)
 set (WAMR_BUILD_LIBC_BUILTIN  1)
-set (WAMR_BUILD_LIBC_WASI     0)
+set (WAMR_BUILD_LIBC_WASI     1)
 
 # Reset default linker flags
 set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")

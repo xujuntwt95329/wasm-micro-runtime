@@ -14,7 +14,7 @@
 
 #include <stdlib.h>
 
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(ANDROID)
 #define CONFIG_HAS_ARC4RANDOM_BUF 1
 #else
 #define CONFIG_HAS_ARC4RANDOM_BUF 0
@@ -55,13 +55,13 @@
 #define CONFIG_HAS_ISATTY 0
 #endif
 
-#ifndef __APPLE__
+#if (!defined __APPLE__) && (!defined ANDROID)
 #define CONFIG_HAS_POSIX_FALLOCATE 1
 #else
 #define CONFIG_HAS_POSIX_FALLOCATE 0
 #endif
 
-#ifndef __APPLE__
+#if (!defined __APPLE__) && (!defined ANDROID)
 #define CONFIG_HAS_PREADV 1
 #else
 #define CONFIG_HAS_PREADV 0
@@ -79,7 +79,7 @@
 #define CONFIG_HAS_PTHREAD_CONDATTR_SETCLOCK 0
 #endif
 
-#ifndef __APPLE__
+#if (!defined __APPLE__) && (!defined ANDROID)
 #define CONFIG_HAS_PWRITEV 1
 #else
 #define CONFIG_HAS_PWRITEV 0
