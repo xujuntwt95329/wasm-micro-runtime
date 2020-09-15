@@ -40,7 +40,7 @@ iwasm [-options] aot_file [args...]
 ```
 
 ### Minimal build
-The libc-WASI and lib-pthread features require a lot of ocalls, if you don't need so much ocalls in your application, you can use the `minimal` version
+The libc-WASI and lib-pthread features require a lot of ocalls, if you don't need so many ocalls in your application, you can use the `minimal` version
 
 ``` Bash
 # replace the build files with minimal version
