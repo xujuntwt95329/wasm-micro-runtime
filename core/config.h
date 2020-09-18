@@ -248,5 +248,9 @@ enum {
     wasm_runtime_set_max_thread_num */
 #define CLUSTER_MAX_THREAD_NUM 4
 
+#ifndef WASM_ENABLE_TAIL_CALL
+#define WASM_ENABLE_TAIL_CALL 0
+#endif
+
 #endif /* end of _CONFIG_H_ */
 
