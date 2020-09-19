@@ -1,0 +1,26 @@
+name: Mac
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build iwasm
+      run: |
+        cd product-mini/platforms/darwin
+        mkdir build && cd build
+        cmake ..
+        make
