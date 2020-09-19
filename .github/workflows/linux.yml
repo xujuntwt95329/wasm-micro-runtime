@@ -67,20 +67,20 @@ jobs:
         ./run.sh
     - name: Build sample multi-thread
       run: |
-        cd sample/multi-thread
+        cd samples/multi-thread
         mkdir build && cd build
         cmake ..
         make
     - name: Build sample multi-module
       run: |
-        cd sample/multi-module
+        cd samples/multi-module
         mkdir build && cd build
         cmake ..
         make
         ./multi_module
     - name: Build sample spawn thread
       run: |
-        cd sample/spawn-thread
+        cd samples/spawn-thread
         mkdir build && cd build
         cmake ..
         make
