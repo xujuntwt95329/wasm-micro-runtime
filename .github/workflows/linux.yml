@@ -54,3 +54,35 @@ jobs:
         ./hello
         ./global
         ./callback
+    - name: download wasi-sdk
+      run: |
+        cd /opt
+        wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz
+        tar -xzf wasi-sdk-11.0-linux.tar.gz
+        mv wasi-sdk-11.0 wasi-sdk
+    - name: Build sample basic
+      run: |
+        cd samples/basic
+        ./build.sh
+        ./run.sh
+    - name: Build sample multi-thread
+      run: |
+        cd sample/multi-thread
+        mkdir build && cd build
+        cmake ..
+        make
+    - name: Build sample multi-module
+      run: |
+        cd sample/multi-module
+        mkdir build && cd build
+        cmake ..
+        make
+        ./multi_module
+    - name: Build sample spawn thread
+      run: |
+        cd sample/spawn-thread
+        mkdir build && cd build
+        cmake ..
+        make
+        ./spawn_thread
+        
