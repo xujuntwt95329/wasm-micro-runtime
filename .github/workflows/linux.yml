@@ -24,6 +24,24 @@ jobs:
         mkdir build && cd build
         cmake ..
         make
+    - name: Classic interp
+      run: |
+        cd product-mini/platforms/linux
+        mkdir build && cd build
+        cmake .. -DWAMR_BUILD_FAST_INTERP=0
+        make
+    - name: Multi module
+      run: |
+        cd product-mini/platforms/linux
+        mkdir build && cd build
+        cmake .. -DWAMR_BUILD_MULTI_MODULE=1
+        make
+    - name: pthread
+      run: |
+        cd product-mini/platforms/linux
+        mkdir build && cd build
+        cmake .. -DWAMR_BUILD_LIB_PTHREAD=1
+        make
     - name: Build wasm-c-api
       run: |
         cd samples/wasm-c-api
