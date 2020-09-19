@@ -1,3 +1,5 @@
+![Linux](https://github.com/xujuntwt95329/wasm-micro-runtime/workflows/Linux/badge.svg)
+
 WebAssembly Micro Runtime
 =========================
 [Build WAMR VM core](./doc/build_wamr.md) | [Embed WAMR](./doc/embed_wamr.md) | [Export native function](./doc/export_native_api.md) | [Build WASM applications](./doc/build_wasm_app.md) | [Samples](https://github.com/bytecodealliance/wasm-micro-runtime#samples)
