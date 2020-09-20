@@ -18,34 +18,61 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Build iwasm
+    - name: Build iwasm [default]
       run: |
         cd product-mini/platforms/linux
         mkdir build && cd build
         cmake ..
         make
-    - name: Classic interp
+    - name: Build iwasm [Classic interp]
       run: |
         cd product-mini/platforms/linux
         cd build
         make clean
         cmake .. -DWAMR_BUILD_FAST_INTERP=0
         make
-    - name: Multi module
+    - name: Build iwasm [Multi module]
       run: |
         cd product-mini/platforms/linux
         cd build
         make clean
         cmake .. -DWAMR_BUILD_MULTI_MODULE=1
         make
-    - name: pthread
+    - name: Build iwasm [lib-pthread]
       run: |
         cd product-mini/platforms/linux
         cd build
         make clean
         cmake .. -DWAMR_BUILD_LIB_PTHREAD=1
         make
-    - name: Build wasm-c-api
+    - name: Build iwasm [aot only]
+      run: |
+        cd product-mini/platforms/linux
+        cd build
+        make clean
+        cmake .. -DWAMR_BUILD_AOT=1 -DWAMR_BUILD_INTERP=0
+        make
+    - name: Build iwasm [interp only]
+      run: |
+        cd product-mini/platforms/linux
+        cd build
+        make clean
+        cmake .. -DWAMR_BUILD_AOT=0
+        make
+    - name: Build iwasm [memory profiling]
+      run: |
+        cd product-mini/platforms/linux
+        cd build
+        make clean
+        cmake .. -DWAMR_BUILD_MEMORY_PROFILING=1
+        make
+    - name: download wasi-sdk
+      run: |
+        cd /opt
+        wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-8/wasi-sdk-8.0-linux.tar.gz
+        tar -xzf wasi-sdk-8.0-linux.tar.gz
+        mv wasi-sdk-8.0 wasi-sdk
+    - name: Build Sample [wasm-c-api]
       run: |
         cd samples/wasm-c-api
         mkdir build && cd build
@@ -54,31 +81,26 @@ jobs:
         ./hello
         ./global
         ./callback
-    - name: download wasi-sdk
-      run: |
-        cd /opt
-        wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz
-        tar -xzf wasi-sdk-11.0-linux.tar.gz
-        mv wasi-sdk-11.0 wasi-sdk
-    - name: Build sample basic
+    - name: Build Sample [basic]
       run: |
         cd samples/basic
         ./build.sh
         ./run.sh
-    - name: Build sample multi-thread
+    - name: Build Sample [multi-thread]
       run: |
         cd samples/multi-thread
         mkdir build && cd build
         cmake ..
         make
-    - name: Build sample multi-module
+        ./iwasm wasm-apps/test.wasm
+    - name: Build Sample [multi-module]
       run: |
         cd samples/multi-module
         mkdir build && cd build
         cmake ..
         make
         ./multi_module
-    - name: Build sample spawn thread
+    - name: Build Sample [spawn-thread]
       run: |
         cd samples/spawn-thread
         mkdir build && cd build
