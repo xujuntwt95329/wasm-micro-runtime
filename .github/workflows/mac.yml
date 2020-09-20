@@ -67,12 +67,6 @@ jobs:
         cmake .. -DWAMR_BUILD_MEMORY_PROFILING=1
         make
         cd .. && rm -rf build
-    - name: download wasi-sdk
-      run: |
-        cd /opt
-        wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-8/wasi-sdk-8.0-macos.tar.gz
-        tar -xzf wasi-sdk-8.0-macos.tar.gz
-        mv wasi-sdk-8.0 wasi-sdk
     - name: Build Sample [wasm-c-api]
       run: |
         cd samples/wasm-c-api
@@ -82,29 +76,3 @@ jobs:
         ./hello
         ./global
         ./callback
-    - name: Build Sample [basic]
-      run: |
-        cd samples/basic
-        ./build.sh
-        ./run.sh
-    - name: Build Sample [multi-thread]
-      run: |
-        cd samples/multi-thread
-        mkdir build && cd build
-        cmake ..
-        make
-        ./iwasm wasm-apps/test.wasm
-    - name: Build Sample [multi-module]
-      run: |
-        cd samples/multi-module
-        mkdir build && cd build
-        cmake ..
-        make
-        ./multi_module
-    - name: Build Sample [spawn-thread]
-      run: |
-        cd samples/spawn-thread
-        mkdir build && cd build
-        cmake ..
-        make
-        ./spawn_thread
