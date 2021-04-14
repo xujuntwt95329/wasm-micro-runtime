@@ -39,6 +39,15 @@ make
 [ $? -eq 0 ] || exit $?
 mv ui_decrease.wasm ${OUT_DIR}/
 
+cd ${APPS_ROOT}/installing
+
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv installing.wasm ${OUT_DIR}/
+
 echo "WASM files generated in folder  ${OUT_DIR}"
 
 echo "#####################  build WASM APPs finished #####################"
