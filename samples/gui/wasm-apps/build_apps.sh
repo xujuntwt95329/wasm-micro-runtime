@@ -39,14 +39,53 @@ make
 [ $? -eq 0 ] || exit $?
 mv ui_decrease.wasm ${OUT_DIR}/
 
-cd ${APPS_ROOT}/installing
-
+cd ${APPS_ROOT}/wallet-install
 rm -rf build
 mkdir build && cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
 make
 [ $? -eq 0 ] || exit $?
-mv installing.wasm ${OUT_DIR}/
+mv install_wallet.wasm ${OUT_DIR}/
+
+cd ${APPS_ROOT}/contract-install
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv install_contract.wasm ${OUT_DIR}/
+
+cd ${APPS_ROOT}/contract-info
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv contract.wasm ${OUT_DIR}/
+
+cd ${APPS_ROOT}/contract-delete
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv delete_contract.wasm ${OUT_DIR}/
+
+cd ${APPS_ROOT}/wallet-info
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv wallet.wasm ${OUT_DIR}/
+
+cd ${APPS_ROOT}/wallet-delete
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv delete_wallet.wasm ${OUT_DIR}/
 
 echo "WASM files generated in folder  ${OUT_DIR}"
 

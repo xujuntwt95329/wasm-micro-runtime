@@ -10,7 +10,7 @@
 
 #define THROW_EXC(msg) wasm_runtime_set_exception(module_inst, msg);
 
-LV_FONT_DECLARE(myFont);
+LV_FONT_DECLARE(myfont);
 uint32 wgl_native_wigdet_create(int8 widget_type,
                                 uint32 par_obj_id,
                                 uint32 copy_obj_id,
@@ -41,7 +41,7 @@ uint32 wgl_native_wigdet_create(int8 widget_type,
     else if (widget_type == WIDGET_TYPE_LABEL) {
         static lv_style_t style1;
         lv_style_copy(&style1, &lv_style_plain);
-        style1.text.font = &myFont;
+        style1.text.font = &myfont;
         style1.text.color = LV_COLOR_BLACK;
 
         wigdet = lv_label_create(par, copy);
