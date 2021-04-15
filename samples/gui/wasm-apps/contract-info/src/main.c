@@ -18,9 +18,9 @@ lv_obj_t *addr_label;
 
 void timer2_update(user_timer_t timer1)
 {
-    lv_label_set_text(model_label, "machine model: 111B");
-    lv_label_set_text(cond_label, "active condition: 1st every month");
-    lv_label_set_text(addr_label, "deliver address: Beijing");
+    lv_label_set_text(model_label, "洗衣液型号: 111B");
+    lv_label_set_text(cond_label, "激活条件: 每月1日");
+    lv_label_set_text(addr_label, "配送地址: 北京市");
 }
 
 void timer1_update(user_timer_t timer1)
@@ -29,7 +29,7 @@ void timer1_update(user_timer_t timer1)
     lv_label_set_text(cond_label, "");
     lv_label_set_text(addr_label, "");
 
-    lv_label_set_text(cond_label, "Paid successfully");
+    lv_label_set_text(cond_label, "洗衣液购买成功");
 
     user_timer_t timer;
     timer = api_timer_create(5000, false, false, timer2_update);
@@ -42,8 +42,8 @@ void timer1_update(user_timer_t timer1)
 void on_init()
 {
     lv_obj_t *dev_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(dev_label, "washing machine 2");
-    lv_obj_align(dev_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
+    lv_label_set_text(dev_label, "洗衣机 2");
+    lv_obj_align(dev_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 5);
 
     lv_obj_t *seg_label = lv_label_create(NULL, NULL);
     lv_label_set_text(seg_label, "_____________________________________________");
@@ -51,19 +51,19 @@ void on_init()
 
     /*Create a label on the button*/
     lv_obj_t *name_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(name_label, "Aomiao laundry detergent machine contract");
+    lv_label_set_text(name_label, "奥妙洗衣液机器合约");
     lv_obj_align(name_label, NULL, LV_ALIGN_CENTER, 0, -40);
 
     model_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(model_label, "machine model: 111B");
+    lv_label_set_text(model_label, "洗衣液型号: 111B");
     lv_obj_align(model_label, NULL, LV_ALIGN_CENTER, 0, 0);
 
     cond_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(cond_label, "active condition: 1st every month");
+    lv_label_set_text(cond_label, "激活条件: 每月1日");
     lv_obj_align(cond_label, NULL, LV_ALIGN_CENTER, 0, 20);
 
     addr_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(addr_label, "deliver address: Beijing");
+    lv_label_set_text(addr_label, "配送地址: 北京市");
     lv_obj_align(addr_label, NULL, LV_ALIGN_CENTER, 0, 40);
 
     /* set up a timer */

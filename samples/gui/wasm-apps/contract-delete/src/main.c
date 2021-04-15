@@ -20,8 +20,8 @@ char label_count1_str[11] = { 0 };
 void on_init()
 {
     lv_obj_t *dev_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(dev_label, "washing machine 2");
-    lv_obj_align(dev_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
+    lv_label_set_text(dev_label, "洗衣机 2");
+    lv_obj_align(dev_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 5);
 
     lv_obj_t *seg_label = lv_label_create(NULL, NULL);
     lv_label_set_text(seg_label, "_____________________________________________");
@@ -29,11 +29,11 @@ void on_init()
 
     /*Create a label on the button*/
     lv_obj_t *name_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(name_label, "Aomiao laundry detergent machine contract");
+    lv_label_set_text(name_label, "奥妙洗衣液机器合约");
     lv_obj_align(name_label, NULL, LV_ALIGN_CENTER, 0, -40);
 
     lv_obj_t *prompt_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(prompt_label, "deleted");
+    lv_label_set_text(prompt_label, "已经删除");
     lv_obj_align(prompt_label, NULL, LV_ALIGN_CENTER, 0, 0);
 }
 
