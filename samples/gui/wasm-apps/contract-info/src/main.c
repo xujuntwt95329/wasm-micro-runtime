@@ -47,7 +47,7 @@ void buy_handler(request_t *request)
 void on_init()
 {
     lv_obj_t *dev_label = lv_label_create(NULL, NULL);
-    lv_label_set_text(dev_label, "洗衣机 2");
+    lv_label_set_text(dev_label, "洗衣机");
     lv_obj_align(dev_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 5);
 
     lv_obj_t *seg_label = lv_label_create(NULL, NULL);
