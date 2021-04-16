@@ -27,7 +27,7 @@ void timer2_update(user_timer_t timer1)
     lv_obj_align(addr_label, NULL, LV_ALIGN_CENTER, 0, 40);
 }
 
-void buy_handler(request_t *request)
+void timer1_update(user_timer_t timer1)
 {
     lv_label_set_text(model_label, "");
     lv_label_set_text(cond_label, "");
@@ -72,15 +72,14 @@ void on_init()
     lv_obj_align(addr_label, NULL, LV_ALIGN_CENTER, 0, 40);
 
     buy_timer = api_timer_create(5000, false, false, timer2_update);
-    api_subscribe_event("buy", buy_handler);
 
     /* set up a timer */
-    // user_timer_t timer;
-    // timer = api_timer_create(10000, false, false, timer1_update);
-    // if (timer)
-    //     api_timer_restart(timer, 10000);
-    // else
-    //     printf("Fail to create timer.\n");
+    user_timer_t timer;
+    timer = api_timer_create(10000, false, false, timer1_update);
+    if (timer)
+        api_timer_restart(timer, 10000);
+    else
+        printf("Fail to create timer.\n");
 }
 
 // static void btn_event_cb(lv_obj_t *btn, lv_event_t event)

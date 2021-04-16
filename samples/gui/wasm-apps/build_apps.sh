@@ -63,6 +63,14 @@ make
 [ $? -eq 0 ] || exit $?
 mv contract.wasm ${OUT_DIR}/
 
+cd ${APPS_ROOT}/contract-info-nobtn
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=${WAMR_DIR}/wamr-sdk/out/gui/app-sdk/wamr_toolchain.cmake
+make
+[ $? -eq 0 ] || exit $?
+mv contract_no_button.wasm ${OUT_DIR}/
+
 cd ${APPS_ROOT}/contract-delete
 rm -rf build
 mkdir build && cd build
