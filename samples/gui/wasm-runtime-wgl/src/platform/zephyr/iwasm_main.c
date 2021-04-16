@@ -27,6 +27,58 @@ extern void wgl_init();
 #include <zephyr.h>
 #include <drivers/uart.h>
 #include <device.h>
+#include <drivers/gpio.h>
+
+/*
+ * Devicetree helper macro which gets the 'flags' cell from a 'gpios'
+ * property, or returns 0 if the property has no 'flags' cell.
+ */
+
+#define FLAGS_OR_ZERO(node)						\
+	COND_CODE_1(DT_PHA_HAS_CELL(node, gpios, flags),		\
+		    (DT_GPIO_FLAGS(node, gpios)),			\
+		    (0))
+
+/*
+ * Get button configuration from the devicetree sw0 alias.
+ *
+ * At least a GPIO device and pin number must be provided. The 'flags'
+ * cell is optional.
+ */
+
+#define SW0_NODE	DT_ALIAS(sw0)
+
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#define SW0_GPIO_LABEL	DT_GPIO_LABEL(SW0_NODE, gpios)
+#define SW0_GPIO_PIN	DT_GPIO_PIN(SW0_NODE, gpios)
+#define SW0_GPIO_FLAGS	(GPIO_INPUT | FLAGS_OR_ZERO(SW0_NODE))
+#else
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#define SW0_GPIO_LABEL	""
+#define SW0_GPIO_PIN	0
+#define SW0_GPIO_FLAGS	0
+#endif
+
+static struct gpio_callback button_cb_data;
+
+/* CoAP request method codes */
+typedef enum {
+    COAP_GET = 1,
+    COAP_POST,
+    COAP_PUT,
+    COAP_DELETE,
+    COAP_EVENT = (COAP_DELETE + 2)
+} coap_method_t;
+
+void button_pressed(struct device *dev, struct gpio_callback *cb,
+		    u32_t pins)
+{
+	request_t request[1];
+    init_request(request, (char *)"buy", COAP_EVENT, FMT_APP_RAW_BINARY, "", 0);
+    am_publish_event(request);
+}
+
+struct device *button;
 
 int uart_char_cnt = 0;
 
@@ -117,6 +169,34 @@ static bool display_input_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
  */
 static void hal_init(void)
 {
+    /* init button */
+    int ret;
+    button = device_get_binding(SW0_GPIO_LABEL);
+	if (button == NULL) {
+		printk("Error: didn't find %s device\n", SW0_GPIO_LABEL);
+		return;
+	}
+
+    ret = gpio_pin_configure(button, SW0_GPIO_PIN, SW0_GPIO_FLAGS);
+	if (ret != 0) {
+		printk("Error %d: failed to configure %s pin %d\n",
+		       ret, SW0_GPIO_LABEL, SW0_GPIO_PIN);
+		return;
+	}
+
+	ret = gpio_pin_interrupt_configure(button,
+					   SW0_GPIO_PIN,
+					   GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n",
+			ret, SW0_GPIO_LABEL, SW0_GPIO_PIN);
+		return;
+	}
+
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(SW0_GPIO_PIN));
+	gpio_add_callback(button, &button_cb_data);
+    /* finish init button */
+
     xpt2046_init();
     ili9340_init();
     display_blanking_off(NULL);

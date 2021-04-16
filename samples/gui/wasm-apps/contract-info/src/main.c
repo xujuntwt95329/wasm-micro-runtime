@@ -16,6 +16,8 @@ lv_obj_t *model_label;
 lv_obj_t *cond_label;
 lv_obj_t *addr_label;
 
+user_timer_t buy_timer;
+
 void timer2_update(user_timer_t timer1)
 {
     lv_label_set_text(model_label, "洗衣液型号: 111B");
@@ -23,7 +25,7 @@ void timer2_update(user_timer_t timer1)
     lv_label_set_text(addr_label, "配送地址: 北京市");
 }
 
-void timer1_update(user_timer_t timer1)
+void buy_handler(request_t *request)
 {
     lv_label_set_text(model_label, "");
     lv_label_set_text(cond_label, "");
@@ -31,10 +33,9 @@ void timer1_update(user_timer_t timer1)
 
     lv_label_set_text(cond_label, "洗衣液购买成功");
 
-    user_timer_t timer;
-    timer = api_timer_create(5000, false, false, timer2_update);
-    if (timer)
-        api_timer_restart(timer, 5000);
+    
+    if (buy_timer)
+        api_timer_restart(buy_timer, 5000);
     else
         printf("Fail to create timer.\n");
 }
@@ -66,13 +67,16 @@ void on_init()
     lv_label_set_text(addr_label, "配送地址: 北京市");
     lv_obj_align(addr_label, NULL, LV_ALIGN_CENTER, 0, 40);
 
+    buy_timer = api_timer_create(5000, false, false, timer2_update);
+    api_subscribe_event("buy", buy_handler);
+
     /* set up a timer */
-    user_timer_t timer;
-    timer = api_timer_create(10000, false, false, timer1_update);
-    if (timer)
-        api_timer_restart(timer, 10000);
-    else
-        printf("Fail to create timer.\n");
+    // user_timer_t timer;
+    // timer = api_timer_create(10000, false, false, timer1_update);
+    // if (timer)
+    //     api_timer_restart(timer, 10000);
+    // else
+    //     printf("Fail to create timer.\n");
 }
 
 // static void btn_event_cb(lv_obj_t *btn, lv_event_t event)
