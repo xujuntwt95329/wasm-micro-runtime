@@ -1181,7 +1181,7 @@ uint64
 wasm_debug_instance_mmap(WASMDebugInstance *instance, uint32 size,
                          int32 map_port)
 {
-    WASMExecEnv *exec_env;
+    WASMExecEnv *exec_env, *temp_exec_env;
     WASMModuleInstance *module_inst;
     uint32 offset;
     void *native_addr;
@@ -1196,13 +1196,20 @@ wasm_debug_instance_mmap(WASMDebugInstance *instance, uint32 size,
 
     module_inst = (WASMModuleInstance *)exec_env->module_inst;
 
+    temp_exec_env = wasm_exec_env_create_internal(
+        (wasm_module_inst_t)module_inst, module_inst->default_wasm_stack_size);
+    if (!temp_exec_env) {
+        return 0;
+    }
+
     /* TODO: malloc in wasi libc maybe not be thread safe, we hope LLDB will
              always ask for memory when threads stopped */
-    offset = wasm_runtime_module_malloc((wasm_module_inst_t)module_inst, size,
-                                        &native_addr);
+    offset = wasm_module_malloc(module_inst, size, &native_addr, temp_exec_env);
     if (!offset)
         LOG_WARNING("the memory may be not enough for debug, try use larger "
                     "--heap-size");
+    wasm_exec_env_destroy_internal(temp_exec_env);
+
     return WASM_ADDR(WasmMemory, 0, offset);
 }
 

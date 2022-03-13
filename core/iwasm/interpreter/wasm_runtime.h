@@ -329,7 +329,7 @@ wasm_get_exception(WASMModuleInstance *module);
 
 uint32
 wasm_module_malloc(WASMModuleInstance *module_inst, uint32 size,
-                   void **p_native_addr);
+                   void **p_native_addr, WASMExecEnv *exec_env);
 
 uint32
 wasm_module_realloc(WASMModuleInstance *module_inst, uint32 ptr, uint32 size,
@@ -340,7 +340,7 @@ wasm_module_free(WASMModuleInstance *module_inst, uint32 ptr);
 
 uint32
 wasm_module_dup_data(WASMModuleInstance *module_inst, const char *src,
-                     uint32 size);
+                     uint32 size, WASMExecEnv *exec_env);
 
 bool
 wasm_validate_app_addr(WASMModuleInstance *module_inst, uint32 app_offset,

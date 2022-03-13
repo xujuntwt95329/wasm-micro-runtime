@@ -584,7 +584,7 @@ aot_clear_exception(AOTModuleInstance *module_inst);
 
 uint32
 aot_module_malloc(AOTModuleInstance *module_inst, uint32 size,
-                  void **p_native_addr);
+                  void **p_native_addr, WASMExecEnv *exec_env);
 
 uint32
 aot_module_realloc(AOTModuleInstance *module_inst, uint32 ptr, uint32 size,
@@ -595,7 +595,7 @@ aot_module_free(AOTModuleInstance *module_inst, uint32 ptr);
 
 uint32
 aot_module_dup_data(AOTModuleInstance *module_inst, const char *src,
-                    uint32 size);
+                    uint32 size, WASMExecEnv *exec_env);
 
 bool
 aot_validate_app_addr(AOTModuleInstance *module_inst, uint32 app_offset,

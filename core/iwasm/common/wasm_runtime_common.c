@@ -1870,12 +1870,12 @@ wasm_runtime_module_malloc(WASMModuleInstanceCommon *module_inst, uint32 size,
 #if WASM_ENABLE_INTERP != 0
     if (module_inst->module_type == Wasm_Module_Bytecode)
         return wasm_module_malloc((WASMModuleInstance *)module_inst, size,
-                                  p_native_addr);
+                                  p_native_addr, NULL);
 #endif
 #if WASM_ENABLE_AOT != 0
     if (module_inst->module_type == Wasm_Module_AoT)
         return aot_module_malloc((AOTModuleInstance *)module_inst, size,
-                                 p_native_addr);
+                                 p_native_addr, NULL);
 #endif
     return 0;
 }
@@ -1921,12 +1921,13 @@ wasm_runtime_module_dup_data(WASMModuleInstanceCommon *module_inst,
 #if WASM_ENABLE_INTERP != 0
     if (module_inst->module_type == Wasm_Module_Bytecode) {
         return wasm_module_dup_data((WASMModuleInstance *)module_inst, src,
-                                    size);
+                                    size, NULL);
     }
 #endif
 #if WASM_ENABLE_AOT != 0
     if (module_inst->module_type == Wasm_Module_AoT) {
-        return aot_module_dup_data((AOTModuleInstance *)module_inst, src, size);
+        return aot_module_dup_data((AOTModuleInstance *)module_inst, src, size,
+                                   NULL);
     }
 #endif
     return 0;

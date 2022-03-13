@@ -946,7 +946,7 @@ static bool
 execute_malloc_function(WASMModuleInstance *module_inst,
                         WASMFunctionInstance *malloc_func,
                         WASMFunctionInstance *retain_func, uint32 size,
-                        uint32 *p_result)
+                        uint32 *p_result, WASMExecEnv *exec_env)
 {
     uint32 argv[2], argc;
     bool ret;
@@ -966,12 +966,20 @@ execute_malloc_function(WASMModuleInstance *module_inst,
         argc = 2;
     }
 
-    ret = wasm_create_exec_env_and_call_function(module_inst, malloc_func, argc,
-                                                 argv, false);
+    if (exec_env) {
+        ret = wasm_call_function(exec_env, malloc_func, argc, argv);
+        if (retain_func && ret) {
+            ret = wasm_call_function(exec_env, retain_func, 1, argv);
+        }
+    }
+    else {
+        ret = wasm_create_exec_env_and_call_function(module_inst, malloc_func,
+                                                     argc, argv, false);
 
-    if (retain_func && ret) {
-        ret = wasm_create_exec_env_and_call_function(module_inst, retain_func,
-                                                     1, argv, false);
+        if (retain_func && ret) {
+            ret = wasm_create_exec_env_and_call_function(
+                module_inst, retain_func, 1, argv, false);
+        }
     }
 
     if (ret)
@@ -1844,7 +1852,7 @@ wasm_dump_perf_profiling(const WASMModuleInstance *module_inst)
 
 uint32
 wasm_module_malloc(WASMModuleInstance *module_inst, uint32 size,
-                   void **p_native_addr)
+                   void **p_native_addr, WASMExecEnv *exec_env)
 {
     WASMMemoryInstance *memory = module_inst->default_memory;
     uint8 *addr = NULL;
@@ -1871,7 +1879,7 @@ wasm_module_malloc(WASMModuleInstance *module_inst, uint32 size,
 #endif
         if (!execute_malloc_function(module_inst, module_inst->malloc_function,
                                      module_inst->retain_function, size,
-                                     &offset)) {
+                                     &offset, exec_env)) {
 #if WASM_ENABLE_DEBUG_INTERP != 0
             wasm_debug_set_engine_active(active);
 #endif
@@ -1975,11 +1983,11 @@ wasm_module_free(WASMModuleInstance *module_inst, uint32 ptr)
 
 uint32
 wasm_module_dup_data(WASMModuleInstance *module_inst, const char *src,
-                     uint32 size)
+                     uint32 size, WASMExecEnv *exec_env)
 {
     char *buffer;
     uint32 buffer_offset =
-        wasm_module_malloc(module_inst, size, (void **)&buffer);
+        wasm_module_malloc(module_inst, size, (void **)&buffer, exec_env);
     if (buffer_offset != 0) {
         buffer = wasm_addr_app_to_native(module_inst, buffer_offset);
         bh_memcpy_s(buffer, size, src, size);

@@ -1680,7 +1680,7 @@ static bool
 execute_malloc_function(AOTModuleInstance *module_inst,
                         AOTFunctionInstance *malloc_func,
                         AOTFunctionInstance *retain_func, uint32 size,
-                        uint32 *p_result)
+                        uint32 *p_result, WASMExecEnv *exec_env)
 {
     uint32 argv[2], argc;
     bool ret;
@@ -1702,9 +1702,17 @@ execute_malloc_function(AOTModuleInstance *module_inst,
             ret = aot_call_function(aot_exec_env, retain_func, 1, argv);
         }
     }
-    else
+    else if (exec_env)
+#else
+    if (exec_env)
 #endif
     {
+        ret = aot_call_function(exec_env, malloc_func, argc, argv);
+        if (retain_func && ret) {
+            ret = aot_call_function(exec_env, retain_func, 1, argv);
+        }
+    }
+    else {
         ret = aot_create_exec_env_and_call_function(module_inst, malloc_func,
                                                     argc, argv);
 
@@ -1742,7 +1750,7 @@ execute_free_function(AOTModuleInstance *module_inst,
 
 uint32
 aot_module_malloc(AOTModuleInstance *module_inst, uint32 size,
-                  void **p_native_addr)
+                  void **p_native_addr, WASMExecEnv *exec_env)
 {
     AOTMemoryInstance *memory_inst = aot_get_default_memory(module_inst);
     AOTModule *module = (AOTModule *)module_inst->aot_module.ptr;
@@ -1780,7 +1788,7 @@ aot_module_malloc(AOTModuleInstance *module_inst, uint32 size,
 
         bh_assert(malloc_func);
         if (!execute_malloc_function(module_inst, malloc_func, retain_func,
-                                     size, &offset)) {
+                                     size, &offset, exec_env)) {
             return 0;
         }
         addr = offset ? (uint8 *)memory_inst->memory_data.ptr + offset : NULL;
@@ -1881,11 +1889,11 @@ aot_module_free(AOTModuleInstance *module_inst, uint32 ptr)
 
 uint32
 aot_module_dup_data(AOTModuleInstance *module_inst, const char *src,
-                    uint32 size)
+                    uint32 size, WASMExecEnv *exec_env)
 {
     char *buffer;
     uint32 buffer_offset =
-        aot_module_malloc(module_inst, size, (void **)&buffer);
+        aot_module_malloc(module_inst, size, (void **)&buffer, exec_env);
 
     if (buffer_offset != 0) {
         buffer = aot_addr_app_to_native(module_inst, buffer_offset);
