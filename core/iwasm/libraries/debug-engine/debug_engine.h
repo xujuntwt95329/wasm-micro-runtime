@@ -10,6 +10,8 @@
 #include "gdbserver.h"
 #include "thread_manager.h"
 
+#define DEBUG_EXECUTION_MEMORY_SIZE 0x85000
+
 typedef enum WASMDebugControlThreadStatus {
     RUNNING,
     STOPPED,
@@ -44,6 +46,12 @@ typedef enum debug_state_t {
     APP_STOPPED
 } debug_state_t;
 
+typedef struct WASMDebugExecutionMemory {
+    uint32 start_offset;
+    uint32 size;
+    uint32 current_pos;
+} WASMDebugExecutionMemory;
+
 typedef struct WASMDebugInstance {
     struct WASMDebugInstance *next;
     WASMDebugControlThread *control_thread;
@@ -60,6 +68,7 @@ typedef struct WASMDebugInstance {
      * RUNNING when receiving STEP/CONTINUE commands, and set to
      * STOPPED when any thread stopped */
     volatile debug_state_t current_state;
+    WASMDebugExecutionMemory exec_mem_info;
 } WASMDebugInstance;
 
 typedef enum WASMDebugEventKind {
