@@ -246,6 +246,7 @@ _vprintf_wa(out_func_t out, void *ctx, const char *fmt, _va_list ap,
 
                     s = start = addr_app_to_native(s_offset);
                     bh_assert(s);
+                    bh_assert(start);
 
                     str_len = strlen(start);
                     if (str_len >= UINT32_MAX - 64) {
