@@ -297,6 +297,8 @@ typedef enum WASMGCEXTOpcode {
     WASM_OP_ARRAY_SET = 0x16,                  /* array.set */
     WASM_OP_ARRAY_LEN = 0x17,                  /* array.len */
 
+    WASM_OP_ARRAY_NEW_CANON_DATA = 0x1b,       /* array.new_canon_data */
+
     WASM_OP_I31_NEW = 0x20,   /* i31.new */
     WASM_OP_I31_GET_S = 0x21, /* i31.get_s */
     WASM_OP_I31_GET_U = 0x22, /* i31.get_u */

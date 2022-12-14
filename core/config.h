@@ -336,7 +336,7 @@
 
 /* Default min/max gc heap size of each app */
 #ifndef GC_HEAP_SIZE_DEFAULT
-#define GC_HEAP_SIZE_DEFAULT (128 * 1024)
+#define GC_HEAP_SIZE_DEFAULT (100 * 1024 * 1024)
 #endif
 #define GC_HEAP_SIZE_MIN (4 * 1024)
 #define GC_HEAP_SIZE_MAX (1024 * 1024 * 1024)

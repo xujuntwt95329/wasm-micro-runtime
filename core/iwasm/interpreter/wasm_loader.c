@@ -5598,6 +5598,10 @@ wasm_loader_find_block_addr(WASMExecEnv *exec_env, BlockAddr *block_addr_cache,
                     case WASM_OP_ARRAY_SET:
                         skip_leb_uint32(p, p_end); /* typeidx */
                         break;
+                    case WASM_OP_ARRAY_NEW_CANON_DATA:
+                        skip_leb_uint32(p, p_end); /* data idx */
+                        skip_leb_uint32(p, p_end); /* typeidx */
+                        break;
                     case WASM_OP_ARRAY_LEN:
                         /* TODO: remove this line for latest GC MVP */
                         skip_leb_uint32(p, p_end);
@@ -11213,6 +11217,39 @@ re_scan:
                             }
                             POP_REF(elem_type);
                         }
+
+                        /* PUSH array obj, (ref $t) */
+                        wasm_set_refheaptype_typeidx(
+                            &wasm_ref_type.ref_ht_typeidx, false, type_idx);
+                        PUSH_REF(wasm_ref_type.ref_type);
+                        break;
+                    }
+
+                    case WASM_OP_ARRAY_NEW_CANON_DATA:
+                    {
+                        read_leb_uint32(p, p_end, type_idx);
+#if WASM_ENABLE_FAST_INTERP != 0
+                        emit_uint32(loader_ctx, type_idx);
+                        emit_uint32(loader_ctx, data_idx);
+#endif
+                        if (!check_type_index(module, type_idx, error_buf,
+                                              error_buf_size)) {
+                            goto fail;
+                        }
+                        if (module->types[type_idx]->type_flag
+                            != WASM_TYPE_ARRAY) {
+                            set_error_buf(error_buf, error_buf_size,
+                                          "unkown array type");
+                            goto fail;
+                        }
+
+                        /* POP (rtt n $t) */
+                        wasm_set_refheaptype_rttn(&wasm_ref_type.ref_ht_rttn,
+                                                  false, 0, type_idx);
+                        /* length */
+                        POP_I32();
+                        /* data offset */
+                        POP_F64();
 
                         /* PUSH array obj, (ref $t) */
                         wasm_set_refheaptype_typeidx(
