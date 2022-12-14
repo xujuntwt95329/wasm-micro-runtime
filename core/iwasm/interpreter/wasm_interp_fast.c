@@ -2048,6 +2048,41 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
                         PUSH_REF(array_obj);
                         HANDLE_OP_END();
                     }
+                    case WASM_OP_ARRAY_NEW_CANON_DATA:
+                    {
+                        WASMModule *wasm_module = module->module;
+                        WASMArrayType *array_type;
+                        WASMValue array_elem = { 0 };
+                        uint32 array_len, data_offset;
+
+                        type_idx = read_uint32(frame_ip);
+                        array_type =
+                            (WASMArrayType *)module->module->types[type_idx];
+
+                        array_len = POP_I32();
+                        data_offset = POP_I32();
+
+                        rtt_obj = wasm_rtt_obj_new(
+                            wasm_module->rtt_obj_set, NULL,
+                            wasm_module->types[type_idx], type_idx);
+                        if (!rtt_obj) {
+                            wasm_set_exception(module,
+                                               "create rtt object failed");
+                            goto got_exception;
+                        }
+
+                        SYNC_ALL_TO_FRAME();
+                        array_obj =
+                            wasm_array_obj_new(module->gc_heap_handle, rtt_obj,
+                                               array_len, &array_elem);
+                        if (!array_obj) {
+                            wasm_set_exception(module,
+                                               "create array object failed");
+                            goto got_exception;
+                        }
+                        PUSH_REF(array_obj);
+                        HANDLE_OP_END();
+                    }
                     case WASM_OP_ARRAY_GET:
                     case WASM_OP_ARRAY_GET_S:
                     case WASM_OP_ARRAY_GET_U:

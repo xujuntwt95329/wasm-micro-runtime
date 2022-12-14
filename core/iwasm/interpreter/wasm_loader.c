@@ -11230,7 +11230,6 @@ re_scan:
                         read_leb_uint32(p, p_end, type_idx);
 #if WASM_ENABLE_FAST_INTERP != 0
                         emit_uint32(loader_ctx, type_idx);
-                        emit_uint32(loader_ctx, data_idx);
 #endif
                         if (!check_type_index(module, type_idx, error_buf,
                                               error_buf_size)) {
