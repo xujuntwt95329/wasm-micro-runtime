@@ -4794,6 +4794,8 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
                     outs_area->lp,
                     GET_OPERAND(void *, REF,
                                 2 * (cur_func->param_count - i - 1)));
+                CLEAR_FRAME_REF(*(
+                    int16 *)(frame_ip + (2 * (cur_func->param_count - i - 1))));
                 outs_area->lp += REF_CELL_NUM;
             }
 #endif
