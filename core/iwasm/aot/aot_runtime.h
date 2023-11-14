@@ -268,6 +268,15 @@ typedef struct AOTModule {
     HashMap *ref_type_set;
     struct WASMRttType **rtt_types;
     korp_mutex rtt_type_lock;
+#if WASM_ENABLE_STRINGREF != 0
+    /* special rtts for stringref types
+        - stringref
+        - stringview_wtf8
+        - stringview_wtf16
+        - stringview_iter
+     */
+    struct WASMRttType *stringref_rtts[4];
+#endif
 #endif
 
 #if WASM_ENABLE_DEBUG_AOT != 0
