@@ -12177,6 +12177,10 @@ re_scan:
                     {
                         uint32 memidx;
 
+#if WASM_ENABLE_JIT != 0 || WASM_ENABLE_WAMR_COMPILER != 0
+                        func->has_memory_operations = true;
+#endif
+
                         read_leb_uint32(p, p_end, memidx);
 #if WASM_ENABLE_FAST_INTERP != 0
                         emit_uint32(loader_ctx, (uint32)memidx);
@@ -12213,6 +12217,10 @@ re_scan:
                     case WASM_OP_STRING_ENCODE_WTF8:
                     {
                         uint32 memidx;
+
+#if WASM_ENABLE_JIT != 0 || WASM_ENABLE_WAMR_COMPILER != 0
+                        func->has_memory_operations = true;
+#endif
 
                         read_leb_uint32(p, p_end, memidx);
 #if WASM_ENABLE_FAST_INTERP != 0
@@ -12264,6 +12272,10 @@ re_scan:
                     {
                         uint32 memidx;
 
+#if WASM_ENABLE_JIT != 0 || WASM_ENABLE_WAMR_COMPILER != 0
+                        func->has_memory_operations = true;
+#endif
+
                         read_leb_uint32(p, p_end, memidx);
 #if WASM_ENABLE_FAST_INTERP != 0
                         emit_uint32(loader_ctx, (uint32)memidx);
@@ -12307,6 +12319,10 @@ re_scan:
                     case WASM_OP_STRINGVIEW_WTF16_ENCODE:
                     {
                         uint32 memidx;
+
+#if WASM_ENABLE_JIT != 0 || WASM_ENABLE_WAMR_COMPILER != 0
+                        func->has_memory_operations = true;
+#endif
 
                         read_leb_uint32(p, p_end, memidx);
 #if WASM_ENABLE_FAST_INTERP != 0
