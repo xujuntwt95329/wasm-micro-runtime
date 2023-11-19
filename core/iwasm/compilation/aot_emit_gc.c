@@ -73,6 +73,13 @@
         }                                                                     \
     } while (0)
 
+static bool
+is_target_x86(AOTCompContext *comp_ctx)
+{
+    return !strncmp(comp_ctx->target_arch, "x86_64", 6)
+           || !strncmp(comp_ctx->target_arch, "i386", 4);
+}
+
 bool
 aot_call_aot_create_func_obj(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
                              LLVMValueRef func_idx, LLVMValueRef *p_gc_obj)
@@ -345,7 +352,7 @@ aot_struct_obj_set_field(AOTCompContext *comp_ctx, LLVMValueRef struct_obj,
                          uint8 field_type)
 {
     bool trunc = false;
-    LLVMValueRef field_data_ptr;
+    LLVMValueRef field_data_ptr, res;
     LLVMTypeRef field_data_type = NULL, field_data_ptr_type = NULL;
 
     get_struct_field_data_types(comp_ctx, field_type, &field_data_type,
@@ -383,9 +390,16 @@ aot_struct_obj_set_field(AOTCompContext *comp_ctx, LLVMValueRef struct_obj,
         goto fail;
     }
 
-    if (!LLVMBuildStore(comp_ctx->builder, field_value, field_data_ptr)) {
+    if (!(res =
+              LLVMBuildStore(comp_ctx->builder, field_value, field_data_ptr))) {
         aot_set_last_error("llvm build store failed.");
         goto fail;
+    }
+
+    if (!is_target_x86(comp_ctx)
+        && (field_data_type == I64_TYPE || field_data_type == F64_TYPE
+            || field_data_type == GC_REF_TYPE)) {
+        LLVMSetAlignment(res, 4);
     }
 
     return true;
@@ -431,6 +445,12 @@ aot_struct_obj_get_field(AOTCompContext *comp_ctx, LLVMValueRef struct_obj,
         goto fail;
     }
 
+    if (!is_target_x86(comp_ctx)
+        && (field_data_type == I64_TYPE || field_data_type == F64_TYPE
+            || field_data_type == GC_REF_TYPE)) {
+        LLVMSetAlignment(field_value, 4);
+    }
+
     if (extend) {
         if (sign_extend) {
             if (!(field_value = LLVMBuildSExt(comp_ctx->builder, field_value,
@@ -466,11 +486,14 @@ struct_new_canon_init_fields(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
     WASMStructFieldType *fields = compile_time_struct_type->fields;
     int32 field_count = (int32)compile_time_struct_type->field_count;
     int32 field_idx;
-    uint8 field_type, field_offset;
+    uint32 field_offset;
+    uint8 field_type;
 
     for (field_idx = field_count - 1; field_idx >= 0; field_idx--) {
         field_type = fields[field_idx].field_type;
-        field_offset = fields[field_idx].field_offset;
+        field_offset = comp_ctx->pointer_size == sizeof(uint64)
+                           ? fields[field_idx].field_offset_64bit
+                           : fields[field_idx].field_offset_32bit;
 
         if (wasm_is_type_reftype(field_type)) {
             POP_GC_REF(field_value);
@@ -505,10 +528,18 @@ fail:
 
 bool
 aot_compile_op_struct_new(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
-                          uint32 type_index, bool init_with_default)
+                          uint32 type_index, bool init_with_default,
+                          const uint8 *frame_ip_struct_new)
 {
     LLVMValueRef rtt_type, struct_obj, cmp;
     LLVMBasicBlockRef check_rtt_type_succ, check_struct_obj_succ;
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_struct_new))
+        return false;
 
     /* Generate call wasm_rtt_type_new and check for exception */
     if (!aot_call_aot_rtt_type_new(comp_ctx, func_ctx, I32_CONST(type_index),
@@ -565,11 +596,14 @@ aot_compile_op_struct_get(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
     WASMStructType *compile_time_struct_type =
         (WASMStructType *)comp_ctx->comp_data->types[type_index];
     WASMStructFieldType *field;
-    uint8 field_type, field_offset;
+    uint32 field_offset;
+    uint8 field_type;
 
     field = compile_time_struct_type->fields + field_idx;
     field_type = field->field_type;
-    field_offset = field->field_offset;
+    field_offset = comp_ctx->pointer_size == sizeof(uint64)
+                       ? field->field_offset_64bit
+                       : field->field_offset_32bit;
 
     if (field_idx >= compile_time_struct_type->field_count) {
         aot_set_last_error("struct field index out of bounds");
@@ -626,11 +660,14 @@ aot_compile_op_struct_set(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
     WASMStructType *compile_time_struct_type =
         (WASMStructType *)comp_ctx->comp_data->types[type_index];
     WASMStructFieldType *field;
-    uint8 field_type, field_offset;
+    uint32 field_offset;
+    uint8 field_type;
 
     field = compile_time_struct_type->fields + field_idx;
     field_type = field->field_type;
-    field_offset = field->field_offset;
+    field_offset = comp_ctx->pointer_size == sizeof(uint64)
+                       ? field->field_offset_64bit
+                       : field->field_offset_32bit;
 
     if (field_idx >= compile_time_struct_type->field_count) {
         aot_set_last_error("struct field index out of bounds");
@@ -805,7 +842,7 @@ aot_array_obj_set_elem(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
                        LLVMValueRef array_elem, uint8 array_elem_type)
 {
     bool trunc = false;
-    LLVMValueRef elem_data_ptr;
+    LLVMValueRef elem_data_ptr, res;
     LLVMTypeRef elem_data_type = NULL, elem_data_ptr_type = NULL;
 
     if (!aot_array_obj_elem_addr(comp_ctx, func_ctx, array_obj, elem_idx,
@@ -867,9 +904,15 @@ aot_array_obj_set_elem(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
         goto fail;
     }
 
-    if (!LLVMBuildStore(comp_ctx->builder, array_elem, elem_data_ptr)) {
+    if (!(res = LLVMBuildStore(comp_ctx->builder, array_elem, elem_data_ptr))) {
         aot_set_last_error("llvm build store failed.");
         goto fail;
+    }
+
+    if (!is_target_x86(comp_ctx)
+        && (elem_data_type == I64_TYPE || elem_data_type == F64_TYPE
+            || elem_data_type == GC_REF_TYPE)) {
+        LLVMSetAlignment(res, 4);
     }
 
     return true;
@@ -991,6 +1034,12 @@ aot_call_wasm_array_get_elem(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
         goto fail;
     }
 
+    if (!is_target_x86(comp_ctx)
+        && (elem_data_type == I64_TYPE || elem_data_type == F64_TYPE
+            || elem_data_type == GC_REF_TYPE)) {
+        LLVMSetAlignment(array_elem, 4);
+    }
+
     if (extend) {
         if (sign) {
             if (!(array_elem = LLVMBuildSExt(comp_ctx->builder, array_elem,
@@ -1066,7 +1115,8 @@ fail:
 bool
 aot_compile_op_array_new(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
                          uint32 type_index, bool init_with_default,
-                         bool fixed_size, uint32 array_len)
+                         bool fixed_size, uint32 array_len,
+                         const uint8 *frame_ip_array_new)
 {
     LLVMValueRef array_length, array_elem = NULL, array_obj;
     LLVMValueRef rtt_type, cmp, elem_idx;
@@ -1076,6 +1126,13 @@ aot_compile_op_array_new(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
         (WASMArrayType *)comp_ctx->comp_data->types[type_index];
     uint8 array_elem_type = compile_time_array_type->elem_type;
     uint32 i;
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_array_new))
+        return false;
 
     /* Generate call aot_rtt_type_new and check for exception */
     if (!aot_call_aot_rtt_type_new(comp_ctx, func_ctx, I32_CONST(type_index),
@@ -1183,7 +1240,8 @@ fail:
 bool
 aot_compile_op_array_new_data(AOTCompContext *comp_ctx,
                               AOTFuncContext *func_ctx, uint32 type_index,
-                              uint32 data_seg_index)
+                              uint32 data_seg_index,
+                              const uint8 *frame_ip_array_new_data)
 {
     LLVMValueRef array_length, data_seg_offset, rtt_type,
         elem_size = NULL, array_elem, array_obj, cmp;
@@ -1192,6 +1250,13 @@ aot_compile_op_array_new_data(AOTCompContext *comp_ctx,
     WASMArrayType *compile_time_array_type =
         (WASMArrayType *)comp_ctx->comp_data->types[type_index];
     uint8 array_elem_type = compile_time_array_type->elem_type;
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_array_new_data))
+        return false;
 
     /* Generate call aot_rtt_type_new and check for exception */
     if (!aot_call_aot_rtt_type_new(comp_ctx, func_ctx, I32_CONST(type_index),
@@ -1870,10 +1935,18 @@ fail:
 
 bool
 aot_compile_op_extern_externalize(AOTCompContext *comp_ctx,
-                                  AOTFuncContext *func_ctx)
+                                  AOTFuncContext *func_ctx,
+                                  const uint8 *frame_ip_extern_externalize)
 {
     LLVMValueRef gc_obj, cmp, external_obj_phi, externref_obj;
     LLVMBasicBlockRef block_curr, block_obj_non_null, block_end;
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_extern_externalize))
+        return false;
 
     POP_GC_REF(gc_obj);
 
