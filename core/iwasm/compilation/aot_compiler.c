@@ -401,6 +401,12 @@ aot_gen_commit_values(AOTCompFrame *frame)
                 case REF_TYPE_I31REF:
                 case REF_TYPE_STRUCTREF:
                 case REF_TYPE_ARRAYREF:
+#if WASM_ENABLE_STRINGREF != 0
+                case REF_TYPE_STRINGREF:
+                case REF_TYPE_STRINGVIEWWTF8:
+                case REF_TYPE_STRINGVIEWWTF16:
+                case REF_TYPE_STRINGVIEWITER:
+#endif
                 case VALUE_TYPE_GC_REF:
                     if (comp_ctx->pointer_size == sizeof(uint64)) {
                         bh_assert(p->ref == (p + 1)->ref);
@@ -1593,8 +1599,8 @@ aot_compile_func(AOTCompContext *comp_ctx, uint32 func_index)
                             flag = WTF8;
                         }
 
-                        if (!aot_compile_op_string_new(comp_ctx, func_ctx,
-                                                       flag))
+                        if (!aot_compile_op_string_new(comp_ctx, func_ctx, flag,
+                                                       frame_ip_org))
                             return false;
                         break;
                     }
@@ -1603,8 +1609,8 @@ aot_compile_func(AOTCompContext *comp_ctx, uint32 func_index)
                         uint32 contents;
                         read_leb_uint32(frame_ip, frame_ip_end, contents);
 
-                        if (!aot_compile_op_string_const(comp_ctx, func_ctx,
-                                                         contents))
+                        if (!aot_compile_op_string_const(
+                                comp_ctx, func_ctx, contents, frame_ip_org))
                             return false;
                         break;
                     }
@@ -1659,7 +1665,8 @@ aot_compile_func(AOTCompContext *comp_ctx, uint32 func_index)
                         break;
                     }
                     case WASM_OP_STRING_CONCAT:
-                        if (!aot_compile_op_string_concat(comp_ctx, func_ctx))
+                        if (!aot_compile_op_string_concat(comp_ctx, func_ctx,
+                                                          frame_ip_org))
                             return false;
                         break;
                     case WASM_OP_STRING_EQ:
@@ -1672,7 +1679,8 @@ aot_compile_func(AOTCompContext *comp_ctx, uint32 func_index)
                             return false;
                         break;
                     case WASM_OP_STRING_AS_WTF8:
-                        if (!aot_compile_op_string_as_wtf8(comp_ctx, func_ctx))
+                        if (!aot_compile_op_string_as_wtf8(comp_ctx, func_ctx,
+                                                           frame_ip_org))
                             return false;
                         break;
                     case WASM_OP_STRINGVIEW_WTF8_ADVANCE:
@@ -1708,12 +1716,13 @@ aot_compile_func(AOTCompContext *comp_ctx, uint32 func_index)
                         break;
                     }
                     case WASM_OP_STRINGVIEW_WTF8_SLICE:
-                        if (!aot_compile_op_stringview_wtf8_slice(comp_ctx,
-                                                                  func_ctx))
+                        if (!aot_compile_op_stringview_wtf8_slice(
+                                comp_ctx, func_ctx, frame_ip_org))
                             return false;
                         break;
                     case WASM_OP_STRING_AS_WTF16:
-                        if (!aot_compile_op_string_as_wtf16(comp_ctx, func_ctx))
+                        if (!aot_compile_op_string_as_wtf16(comp_ctx, func_ctx,
+                                                            frame_ip_org))
                             return false;
                         break;
                     case WASM_OP_STRINGVIEW_WTF16_LENGTH:
@@ -1739,12 +1748,13 @@ aot_compile_func(AOTCompContext *comp_ctx, uint32 func_index)
                         break;
                     }
                     case WASM_OP_STRINGVIEW_WTF16_SLICE:
-                        if (!aot_compile_op_stringview_wtf16_slice(comp_ctx,
-                                                                   func_ctx))
+                        if (!aot_compile_op_stringview_wtf16_slice(
+                                comp_ctx, func_ctx, frame_ip_org))
                             return false;
                         break;
                     case WASM_OP_STRING_AS_ITER:
-                        if (!aot_compile_op_string_as_iter(comp_ctx, func_ctx))
+                        if (!aot_compile_op_string_as_iter(comp_ctx, func_ctx,
+                                                           frame_ip_org))
                             return false;
                         break;
                     case WASM_OP_STRINGVIEW_ITER_NEXT:

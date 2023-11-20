@@ -741,6 +741,9 @@ wasm_runtime_call_func_ref(WASMExecEnv *exec_env,
 {
     WASMFunctionInstanceCommon *func_inst = NULL;
     uint32 func_idx = wasm_func_obj_get_func_idx_bound(func_obj);
+#if WASM_ENABLE_AOT != 0
+    AOTFunctionInstance aot_func_inst = { 0 };
+#endif
 
 #if WASM_ENABLE_INTERP != 0
     if (exec_env->module_inst->module_type == Wasm_Module_Bytecode) {
@@ -756,7 +759,6 @@ wasm_runtime_call_func_ref(WASMExecEnv *exec_env,
 #endif
 #if WASM_ENABLE_AOT != 0
     if (exec_env->module_inst->module_type == Wasm_Module_AoT) {
-        AOTFunctionInstance aot_func_inst = { 0 };
         uint32 func_type_idx;
         AOTModuleInstance *module_inst =
             (AOTModuleInstance *)exec_env->module_inst;

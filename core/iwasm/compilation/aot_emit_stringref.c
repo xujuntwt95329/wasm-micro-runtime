@@ -244,7 +244,7 @@ fail:
 
 bool
 aot_compile_op_string_new(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
-                          uint32 encoding)
+                          uint32 encoding, const uint8 *frame_ip_stringref_new)
 {
     LLVMValueRef maddr, byte_length, str_obj, stringref_obj;
     bool enable_segue = comp_ctx->enable_segue_i32_store;
@@ -257,6 +257,13 @@ aot_compile_op_string_new(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
      * memory overflow */
     if (!(maddr = aot_check_memory_overflow(comp_ctx, func_ctx, 0, 8,
                                             enable_segue)))
+        return false;
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_stringref_new))
         return false;
 
     param_types[0] = INT8_PTR_TYPE;
@@ -293,10 +300,17 @@ fail:
 
 bool
 aot_compile_op_string_const(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
-                            uint32 contents)
+                            uint32 contents, const uint8 *frame_ip_string_const)
 {
     LLVMValueRef param_values[2], func, value, str_obj, stringref_obj;
     LLVMTypeRef param_types[2], ret_type, func_type, func_ptr_type;
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_string_const))
+        return false;
 
     param_types[0] = INT8_PTR_TYPE;
     ret_type = INT8_PTR_TYPE;
@@ -405,7 +419,8 @@ fail:
 }
 
 bool
-aot_compile_op_string_concat(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
+aot_compile_op_string_concat(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
+                             const uint8 *frame_ip_string_concat)
 {
     LLVMValueRef param_values[2], func, value, str_obj_lhs, str_obj_rhs,
         stringref_obj_lhs, stringref_obj_rhs, stringref_obj_new;
@@ -423,6 +438,13 @@ aot_compile_op_string_concat(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
                                                     stringref_obj_rhs))) {
         goto fail;
     }
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_string_concat))
+        return false;
 
     param_types[0] = INT8_PTR_TYPE;
     param_types[1] = INT8_PTR_TYPE;
@@ -533,11 +555,19 @@ fail:
 
 bool
 aot_compile_op_string_as_wtf8(AOTCompContext *comp_ctx,
-                              AOTFuncContext *func_ctx)
+                              AOTFuncContext *func_ctx,
+                              const uint8 *frame_ip_string_as_wtf8)
 {
     LLVMValueRef str_obj, stringref_obj, stringview_wtf8_obj;
 
     POP_GC_REF(stringref_obj);
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_string_as_wtf8))
+        return false;
 
     if (!(str_obj = aot_call_wasm_string_create_view(
               comp_ctx, func_ctx, stringref_obj, STRING_VIEW_WTF8))) {
@@ -652,13 +682,21 @@ fail:
 
 bool
 aot_compile_op_stringview_wtf8_slice(AOTCompContext *comp_ctx,
-                                     AOTFuncContext *func_ctx)
+                                     AOTFuncContext *func_ctx,
+                                     const uint8 *frame_ip_wtf8_slice)
 {
     LLVMValueRef stringref_obj, start, end, stringref_obj_new, value;
 
     POP_I32(start);
     POP_I32(end);
     POP_GC_REF(stringref_obj);
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_wtf8_slice))
+        return false;
 
     if (!(value = aot_call_wasm_string_slice(comp_ctx, func_ctx, stringref_obj,
                                              start, end, STRING_VIEW_WTF8))) {
@@ -680,11 +718,19 @@ fail:
 
 bool
 aot_compile_op_string_as_wtf16(AOTCompContext *comp_ctx,
-                               AOTFuncContext *func_ctx)
+                               AOTFuncContext *func_ctx,
+                               const uint8 *frame_ip_string_as_wtf16)
 {
     LLVMValueRef str_obj, stringref_obj, stringview_wtf16_obj;
 
     POP_GC_REF(stringref_obj);
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_string_as_wtf16))
+        return false;
 
     if (!(str_obj = aot_call_wasm_string_create_view(
               comp_ctx, func_ctx, stringref_obj, STRING_VIEW_WTF16))) {
@@ -836,13 +882,21 @@ fail:
 
 bool
 aot_compile_op_stringview_wtf16_slice(AOTCompContext *comp_ctx,
-                                      AOTFuncContext *func_ctx)
+                                      AOTFuncContext *func_ctx,
+                                      const uint8 *frame_ip_wtf16_slice)
 {
     LLVMValueRef stringref_obj, start, end, stringref_obj_new, value;
 
     POP_I32(end);
     POP_I32(start);
     POP_GC_REF(stringref_obj);
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_wtf16_slice))
+        return false;
 
     if (!(value = aot_call_wasm_string_slice(comp_ctx, func_ctx, stringref_obj,
                                              start, end, STRING_VIEW_WTF16))) {
@@ -864,11 +918,19 @@ fail:
 
 bool
 aot_compile_op_string_as_iter(AOTCompContext *comp_ctx,
-                              AOTFuncContext *func_ctx)
+                              AOTFuncContext *func_ctx,
+                              const uint8 *frame_ip_string_as_iter)
 {
     LLVMValueRef stringref_obj, stringview_iter_obj;
 
     POP_GC_REF(stringref_obj);
+
+    if (!aot_gen_commit_values(comp_ctx->aot_frame))
+        return false;
+
+    if (!aot_gen_commit_sp_ip(comp_ctx->aot_frame, comp_ctx->aot_frame->sp,
+                              frame_ip_string_as_iter))
+        return false;
 
     if (!aot_call_wasm_stringref_obj_new(comp_ctx, func_ctx, stringref_obj,
                                          WASM_TYPE_STRINGVIEWITER, 0,
