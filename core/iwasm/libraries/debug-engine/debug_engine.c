@@ -947,29 +947,26 @@ wasm_debug_instance_add_breakpoint(WASMDebugInstance *instance, uint64 addr,
 
     offset = WASM_ADDR_OFFSET(addr);
 
-    if (length >= sizeof(break_instr)) {
-        if (offset + sizeof(break_instr) <= module_inst->module->load_size) {
-            WASMDebugBreakPoint *breakpoint;
-            if (!(breakpoint =
-                      wasm_runtime_malloc(sizeof(WASMDebugBreakPoint)))) {
-                LOG_ERROR("WASM Debug Engine error: failed to allocate memory");
-                return false;
-            }
-            memset(breakpoint, 0, sizeof(WASMDebugBreakPoint));
-            breakpoint->addr = offset;
-            /* TODO: how to if more than one breakpoints are set
-                     at the same addr? */
-            bh_memcpy_s(&breakpoint->orignal_data, (uint32)sizeof(break_instr),
-                        module_inst->module->load_addr + offset,
-                        (uint32)sizeof(break_instr));
-
-            bh_memcpy_s(module_inst->module->load_addr + offset,
-                        (uint32)sizeof(break_instr), break_instr,
-                        (uint32)sizeof(break_instr));
-
-            bh_list_insert(&instance->break_point_list, breakpoint);
-            return true;
+    if (offset + sizeof(break_instr) <= module_inst->module->load_size) {
+        WASMDebugBreakPoint *breakpoint;
+        if (!(breakpoint = wasm_runtime_malloc(sizeof(WASMDebugBreakPoint)))) {
+            LOG_ERROR("WASM Debug Engine error: failed to allocate memory");
+            return false;
         }
+        memset(breakpoint, 0, sizeof(WASMDebugBreakPoint));
+        breakpoint->addr = offset;
+        /* TODO: how to if more than one breakpoints are set
+                    at the same addr? */
+        bh_memcpy_s(&breakpoint->orignal_data, (uint32)sizeof(break_instr),
+                    module_inst->module->load_addr + offset,
+                    (uint32)sizeof(break_instr));
+
+        bh_memcpy_s(module_inst->module->load_addr + offset,
+                    (uint32)sizeof(break_instr), break_instr,
+                    (uint32)sizeof(break_instr));
+
+        bh_list_insert(&instance->break_point_list, breakpoint);
+        return true;
     }
     return false;
 }
@@ -995,24 +992,22 @@ wasm_debug_instance_remove_breakpoint(WASMDebugInstance *instance, uint64 addr,
         return false;
     offset = WASM_ADDR_OFFSET(addr);
 
-    if (length >= sizeof(break_instr)) {
-        if (offset + sizeof(break_instr) <= module_inst->module->load_size) {
-            WASMDebugBreakPoint *breakpoint =
-                bh_list_first_elem(&instance->break_point_list);
-            while (breakpoint) {
-                WASMDebugBreakPoint *next_break = bh_list_elem_next(breakpoint);
-                if (breakpoint->addr == offset) {
-                    /* TODO: how to if more than one breakpoints are set
-                       at the same addr? */
-                    bh_memcpy_s(module_inst->module->load_addr + offset,
-                                (uint32)sizeof(break_instr),
-                                &breakpoint->orignal_data,
-                                (uint32)sizeof(break_instr));
-                    bh_list_remove(&instance->break_point_list, breakpoint);
-                    wasm_runtime_free(breakpoint);
-                }
-                breakpoint = next_break;
+    if (offset + sizeof(break_instr) <= module_inst->module->load_size) {
+        WASMDebugBreakPoint *breakpoint =
+            bh_list_first_elem(&instance->break_point_list);
+        while (breakpoint) {
+            WASMDebugBreakPoint *next_break = bh_list_elem_next(breakpoint);
+            if (breakpoint->addr == offset) {
+                /* TODO: how to if more than one breakpoints are set
+                    at the same addr? */
+                bh_memcpy_s(module_inst->module->load_addr + offset,
+                            (uint32)sizeof(break_instr),
+                            &breakpoint->orignal_data,
+                            (uint32)sizeof(break_instr));
+                bh_list_remove(&instance->break_point_list, breakpoint);
+                wasm_runtime_free(breakpoint);
             }
+            breakpoint = next_break;
         }
     }
     return true;

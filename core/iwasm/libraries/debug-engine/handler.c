@@ -312,6 +312,34 @@ handle_general_query(WASMGDBServer *server, char *payload)
     }
 
     if (!strcmp(name, "WasmMem")) {
+        uint64 module_id, maddr, mlen;
+        bool ret;
+
+        os_mutex_lock(&tmpbuf_lock);
+        snprintf(tmpbuf, MAX_PACKET_SIZE, "%s", "");
+        if (sscanf(args, "%" SCNx64 ";%" SCNx64 ";%" SCNx64, &module_id, &maddr,
+                   &mlen)
+            == 3) {
+            char *buff;
+
+            if (mlen * 2 > MAX_PACKET_SIZE) {
+                LOG_ERROR("Buffer overflow!");
+                mlen = MAX_PACKET_SIZE / 2;
+            }
+
+            buff = wasm_runtime_malloc(mlen);
+            if (buff) {
+                ret = wasm_debug_instance_get_mem(
+                    (WASMDebugInstance *)server->thread->debug_instance, maddr,
+                    buff, &mlen);
+                if (ret) {
+                    mem2hex(buff, tmpbuf, mlen);
+                }
+                wasm_runtime_free(buff);
+            }
+        }
+        write_packet(server, tmpbuf);
+        os_mutex_unlock(&tmpbuf_lock);
     }
 
     if (!strcmp(name, "Symbol")) {
